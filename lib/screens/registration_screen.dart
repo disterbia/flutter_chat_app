@@ -1,17 +1,32 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flash_chat/constants.dart';
+import 'package:flash_chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:sentry/sentry.dart';
 
 class RegistrationScreen extends StatefulWidget {
 
   static const String id='registration_screen';
+
 
   @override
   _RegistrationScreenState createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  final SentryClient sentry = new SentryClient(dsn: 'https://44236c005c114ba48e86386d4ced21d5@sentry.io/3103940');
+  final _auth=FirebaseAuth.instance;
+
+  String email;
+  String password;
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.lightBlueAccent,
+      ),
       backgroundColor: Colors.white,
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.0),
@@ -19,59 +34,38 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Hero(
-              tag: 'logo',
-              child: Container(
-                height: 200.0,
-                child: Image.asset('images/logo.png'),
+            Flexible( //공간만큼 줄어듬
+              child: Hero(
+                tag: 'logo',
+                child: Container(
+                  height: 200.0,
+                  child: Image.asset('images/logo.png'),
+                ),
               ),
             ),
             SizedBox(
               height: 48.0,
             ),
             TextField(
+              style: TextStyle(color: Colors.black),
               onChanged: (value) {
-                //Do something with the user input.
+                email=value;
               },
-              decoration: InputDecoration(
-                hintText: 'Enter your email',
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
+              decoration: kMessageTextFieldDecoration.copyWith(
+                hintText: "Enter Your Email"
               ),
             ),
             SizedBox(
               height: 8.0,
             ),
             TextField(
+              style: TextStyle(color: Colors.black),
+              obscureText: true, //password
               onChanged: (value) {
-                //Do something with the user input.
+                password=value;
               },
-              decoration: InputDecoration(
-                hintText: 'Enter your password',
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
+              decoration: kMessageTextFieldDecoration.copyWith(
+                hintText: "Enter Your Password"
               ),
             ),
             SizedBox(
@@ -84,8 +78,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 borderRadius: BorderRadius.all(Radius.circular(30.0)),
                 elevation: 5.0,
                 child: MaterialButton(
-                  onPressed: () {
-                    //Implement registration functionality.
+                  onPressed: () async {
+
+                    try{
+                      final newUser=await _auth.createUserWithEmailAndPassword(email: email.trim(), password: password.trim());
+                      if(newUser != null){
+                        Navigator.pushNamed(context, ChatScreen.id);
+                      }
+                    }catch(e){
+                      await sentry.captureException(exception: 'join error',stackTrace: e.toString());
+                    }
                   },
                   minWidth: 200.0,
                   height: 42.0,
@@ -101,4 +103,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
     );
   }
+
+
 }
